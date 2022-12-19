@@ -120,10 +120,55 @@ plot(t,x(:,3:4) - vds');
 legend('e_x','e_y','e_{vx}','e_{vy}');title('Error of the model');
 grid on ; xlabel('Time (s)') ;
 
-%% test of odefun
-% [xLd,vLd,aLd] = traj(0.2);
-% x_test = [xLd;vLd];
-% dx = odefun(0.2,x_test,data);
+%% 3D animation
+figure(8)
+
+time_step_dynamic = t_max;
+
+x_dynamic = x(:,1);
+y_dynamic = x(:,2);
+
+
+%plot desired and actual static lines
+plot(xds(1,:),xds(2,:),'--k')
+
+hold on
+plot(x(:,1),x(:,2),'b')
+plot(fixed_point(1,:),fixed_point(2,:), 'ro')
+grid on
+xlim([0, 1]);
+ylim([0, 2]);
+set(gca,'Color','none');
+set(gca,'CLim',[0, 1E-4]);
+xlabel("x")
+ylabel("y")
+
+%initialize live plots
+x_dr = x_dynamic(1);
+y_dr = y_dynamic(1);
+
+plot_num = plot(x_dynamic(1),y_dynamic(1),'ko');
+plot_cable1 = plot([x_dynamic(1), fixed_point(1,1)], [y_dynamic(1),fixed_point(2,1)],'-y','LineWidth',0.5);
+plot_cable2 = plot([x_dynamic(1), fixed_point(1,2)], [y_dynamic(1),fixed_point(2,2)],'-m','LineWidth',0.5);
+plot_cable3 = plot([x_dynamic(1), fixed_point(1,3)], [y_dynamic(1),fixed_point(2,3)],'-g','LineWidth',0.5);
+
+for idx_dynamic = 1:length(x_dynamic) 
+    
+
+    %plot load
+    plot_num.XData = x_dynamic(idx_dynamic); 
+    plot_num.YData = y_dynamic(idx_dynamic); 
+    
+    % plot cable
+    plot_cable1.XData = [x_dynamic(idx_dynamic), fixed_point(1,1)]; 
+    plot_cable1.YData = [y_dynamic(idx_dynamic), fixed_point(2,1)]; 
+    plot_cable2.XData = [x_dynamic(idx_dynamic), fixed_point(1,2)]; 
+    plot_cable2.YData = [y_dynamic(idx_dynamic), fixed_point(2,2)]; 
+    plot_cable3.XData = [x_dynamic(idx_dynamic), fixed_point(1,3)]; 
+    plot_cable3.YData = [y_dynamic(idx_dynamic), fixed_point(2,3)]; 
+    pause(0.002)
+     
+end
 
 %% odefun
 function dx = odefun(t,x,data)

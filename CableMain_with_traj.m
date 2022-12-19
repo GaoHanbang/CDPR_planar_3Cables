@@ -147,30 +147,17 @@ ylabel("y")
 x_dr = x_dynamic(1);
 y_dr = y_dynamic(1);
 
-
-
 plot_num = plot(x_dynamic(1),y_dynamic(1),'ko');
 plot_cable1 = plot([x_dynamic(1), fixed_point(1,1)], [y_dynamic(1),fixed_point(2,1)],'-y','LineWidth',0.5);
 plot_cable2 = plot([x_dynamic(1), fixed_point(1,2)], [y_dynamic(1),fixed_point(2,2)],'-m','LineWidth',0.5);
 plot_cable3 = plot([x_dynamic(1), fixed_point(1,3)], [y_dynamic(1),fixed_point(2,3)],'-g','LineWidth',0.5);
 
-% plot_num1_l = plot3([x_dr-wingspan_x/2,x_dr+wingspan_x/2], [y_dr,y_dr], [z_dr,z_dr], 'b','LineWidth',2);
-% plot_num1_r = plot3([x_dr,x_dr], [y_dr-wingspan_y/2,y_dr+wingspan_y/2], [z_dr,z_dr], 'b','LineWidth',2);
-% plot_num2 = scatter3(x1_dynamic(1),y1_dynamic(1),z1_dynamic(1),200,'r.');
-% plot_num3 = plot3([x_dynamic(1), x1_dynamic(1)], [y_dynamic(1), y1_dynamic(1)],...
-%                                                         [z_dynamic(1), z1_dynamic(1)], '-k','LineWidth',1.5);
-
-
 for idx_dynamic = 1:length(x_dynamic) 
     
 
-    
-    
     %plot load
     plot_num.XData = x_dynamic(idx_dynamic); 
     plot_num.YData = y_dynamic(idx_dynamic); 
-
-    
     
     % plot cable
     plot_cable1.XData = [x_dynamic(idx_dynamic), fixed_point(1,1)]; 

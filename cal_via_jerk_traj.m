@@ -10,7 +10,7 @@ tf = 6;
 x0 = 0.0;
 y0 = 0.0;
 
-x1 = 0.4 ; % viapoint
+x1 = 0.3 ; % viapoint
 y1 = 0.1 ;
 
 xf = 0.6 ; % final point
