@@ -49,7 +49,7 @@ t_max = 10;
 time_step_pos = 1/100;
 
 %% Controller Options
-kv  = [30, 0; 0, 50];
+kv  = [50, 0; 0, 50];
 kp  = [200, 0; 0, 200];
 
 %% Trajectory Generation
@@ -58,9 +58,15 @@ interval_2 = cal_via_jerk_traj;
 s = linspace(0,10,1000);
 figure(2);
 generated_traj = mytraj(s,interval_2);
-plot(s,generated_traj);
+
+plot(s,generated_traj(:,1:2));
+yyaxis right
+plot(s,generated_traj(:,3:4));
+
 legend('x','y','v_x','v_y');title('Trajectory with respect to time(s)');
 grid on ; xlabel('Time (s)') ;
+yyaxis left; ylabel('position(m)')
+yyaxis right; ylabel('velocity(m/s)')
 figure(3);
 generated_traj = mytraj(s,interval_2);
 plot(generated_traj(:,1),generated_traj(:,2))
@@ -87,27 +93,44 @@ pos_vel = mytraj(t,interval_2);
 
 
 figure(4)
+yyaxis left
 plot(t,pos_vel(:,1),'r')
 hold on
 plot(t,pos_vel(:,2),'b')
 hold on
+yyaxis right
 plot(t,pos_vel(:,3),'k')
 hold on
 plot(t,pos_vel(:,4),'g')
 hold on
+
+
+%% Tension info
+tension_info = []; % tension_info = [Tau_mg;Tau_ff;Tau_c]
+save('tension_info.mat','tension_info');
+if isfile('tension_info.mat')
+    delete('tension_info.mat');
+    save('tension_info.mat','tension_info');
+else
+     save('tension_info.mat','tension_info');
+end
 %% Solving Dynamical Equations
 odeopts = odeset('RelTol',1e-5,'AbsTol',1e-5);
 [t, x] = ode45(@odefun, [0 t_max], x_0, odeopts, data);
+yyaxis left
 plot(t,x(:,1))
 hold on
 plot(t,x(:,2))
 hold on
+yyaxis right
 plot(t,x(:,3))
 hold on  
 plot(t,x(:,4))
 hold on
 legend('x_d','y_d','v_{dx}','v_{dy}','x','y','v_x','v_y');title('Dynamic Control of three cables system');
-grid on ; xlabel('Time (s)') ;
+grid on ; xlabel('Time (s)');
+yyaxis left; ylabel('error of position (m)');
+yyaxis right; ylabel('error of velocity (m/s)');
 
 %% Plot the error
 figure(5) 
@@ -117,6 +140,23 @@ hold on
 plot(t,x(:,3:4) - res(:,3:4));
 legend('e_x','e_y','e_{vx}','e_{vy}');title('Error of the model');
 grid on ; xlabel('Time (s)') ;
+
+%% Plot the tension with respect to time
+
+% ATTENSION: the problem of this method to plot cable tension is the time
+% is not continous. For one given time, there could be more
+% corresponding cable tension. Simply because ode45 function will calculate
+% backforwardly the previous time period.
+figure(6)
+load('tension_info.mat','tension_info')
+plot(tension_info(1,:),tension_info(2:end,:));
+legend('\tau_{1mg}','\tau_{2mg}','\tau_{3mg}','\tau_{1ff}','\tau_{2ff}','\tau_{3ff}','\tau_{1c}','\tau_{2c}','\tau_{3c}');title('Tensions along three cable');
+grid on ; xlabel('Time (s)') ; ylabel('cable tension (N)');
+
+figure(7)  
+plot(tension_info(1,:),tension_info(2:4,:));
+legend('\tau_{1mg}','\tau_{2mg}','\tau_{3mg}');title('Tensions along three cable');
+grid on ; xlabel('Time (s)') ; ylabel('cable tension (N)');
 
 
 
@@ -226,7 +266,10 @@ function dx = odefun(t,x,data)
     if(Tau_mg(3)>30)
         Tau_mg(3) = 1;
     end
-    Tau_mg
+    %% Store tension infomation
+     load('tension_info.mat','tension_info');
+     tension_info = [tension_info,[t;Tau_mg;Tau_ff;Tau_c]]; 
+     save('tension_info.mat','tension_info');
     %% Dynamics 
     vL_dot = (W* Tau_mg + G)/m ;
     xL_dot = vL ;
@@ -251,18 +294,28 @@ function pos_vel = calc_traj(t,interval_2)
     x02 = [0.8;0.2];
     xf = [0.8;0];
     t_max = 1;
+
+    %% five viapoints trajectory
+%     if(t>=0 && t< 1)       
+%         pos_vel = cal_jerk_traj(t,x0,x01,t_max) ;
+%     elseif(t>= 1 && t<2)
+%         pos_vel = [x01;0;0];
+%     elseif(t>=2 && t<8)
+%         pos_vel = interval_2(t-2)+ [0.2;0.2;0;0];
+%     elseif(t> 8 && t<9)
+%         pos_vel = [x02;0;0];
+%     else
+%         pos_vel = cal_jerk_traj(t-9,x02,xf,t_max) ;
+%     end
     
-    if(t>=0 && t< 1)       
-        pos_vel = cal_jerk_traj(t,x0,x01,t_max) ;
-    elseif(t>= 1 && t<2)
-        pos_vel = [x01;0;0];
-    elseif(t>=2 && t<8)
-        pos_vel = interval_2(t-2)+ [0.2;0.2;0;0];
-    elseif(t> 8 && t<9)
-        pos_vel = [x02;0;0];
-    else
-        pos_vel = cal_jerk_traj(t-9,x02,xf,t_max) ;
-    end
+    %% only jerk viapoint curve
+        if(t >= 0 && t<2)
+            pos_vel = [x0;0;0];
+        elseif(t>= 2 && t<8)
+            pos_vel = interval_2(t-2)+ [0.2;0;0;0];
+        else
+            pos_vel = [xf;0;0];
+        end
 %     fprintf('simulating process: t = %f s \n',t)
 end
 
