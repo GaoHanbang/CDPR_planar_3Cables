@@ -11,7 +11,7 @@ g = 9.81 ; % gravity
 p_0 = [0.5,0]';
 tau_min = 1;
 tau_max = 30;
-t_max = 10;
+
 %% Initial Configuration
 figure(1)
 plot(p_0(1),p_0(2),'ko'); 
@@ -22,7 +22,7 @@ X_0 = [fixed_point(1,:); p_0(1)*ones(1,max(size(fixed_point)))];
 Y_0 = [fixed_point(2,:); p_0(2)*ones(1,max(size(fixed_point)))];
 plot(X_0,Y_0)
 title('Scheme of the three cables system');
-grid on ; xlabel('x(m)') ; ylabel('y(m)') ;
+grid on ; xlabel('Time (s)') ;
 
 %% Tension distribution of initial condition
 U = fixed_point - p_0*ones(1, max(size(fixed_point)));
@@ -46,35 +46,36 @@ fprintf('%g]\n', Tau(end));
 
 time_current = 0;
 t_max = 10;
-time_step_pos = 1/100;
+time_step_pos = 1/500;
 
 %% Controller Options
-kv  = [50, 0; 0, 50];
+kv  = [20, 0; 0, 20];
 kp  = [100, 0; 0, 100];
 
 %% Trajectory Generation
-interval_2 = cal_via_jerk_traj;
-%% Plotting Initialization
-s = linspace(0,10,1000);
-figure(2);
-generated_traj = mytraj(s,interval_2);
+t = linspace(time_current, t_max, t_max/time_step_pos);
+x0 = [0.2,0]';
+xf = [0.8,0.3]';
+xd = x0+ (xf-x0)* (6*(t/t_max).^5 -15* (t/t_max).^4 + 10* (t/t_max).^3) ;
+vd = (xf-x0)/t_max* (30*(t/t_max).^4 -60* (t/t_max).^3 + 30* (t/t_max).^2) ;
+ad = (xf-x0)/t_max^2 * (120*(t/t_max).^3 -180* (t/t_max).^2 + 60* (t/t_max)) ;
 
-plot(s,generated_traj(:,1:2));
-yyaxis right
-plot(s,generated_traj(:,3:4));
-
-legend('x','y','v_x','v_y');title('Trajectory with respect to time(s)');
+figure(2)
+plot(t,xd(1,:),'r')
+hold on
+plot(t,vd(1,:),'k')
+hold on
+plot(t,ad(1,:),'b')
+hold on
+legend('xd','vd','ad');title('Jerk minimum trajectory');
 grid on ; xlabel('Time (s)') ;
-yyaxis left; ylabel('position(m)')
-yyaxis right; ylabel('velocity(m/s)')
-figure(3);
-generated_traj = mytraj(s,interval_2);
-plot(generated_traj(:,1),generated_traj(:,2))
-title('Trajectory in 2D phase');
-axis equal
-grid on ; xlabel('position (m)') ; ylabel('position (m)') ;
+
+%% Plotting Initialization
+
+
 %% Plant Simulation
-x_0 = calc_traj(0,interval_2)';
+x_0 = [xd(:,1);vd(:,1)];
+
 %% zip the data 
  data.fixed_point = fixed_point;
  data.G = [0; -m*g];
@@ -83,70 +84,41 @@ x_0 = calc_traj(0,interval_2)';
  data.m = m;
  data.kv = kv;
  data.kp = kp;
- data.interval_2 = interval_2;
-%  data.x0 = x0;
-%  data.xf = xf; 
-%  data.t_max = t_max;
+ data.x0 = x0;
+ data.xf = xf; 
+ data.t_max = t_max;
 %% plot desired trajectory
 t = linspace(time_current, t_max, t_max/time_step_pos);
-pos_vel = mytraj(t,interval_2);
+x0 = [0.2,0]';
+xf = [0.8,0]';
+xds = x0+ (xf-x0)* (6*(t/t_max).^5 -15* (t/t_max).^4 + 10* (t/t_max).^3) ;
+vds = (xf-x0)/t_max* (30*(t/t_max).^4 -60* (t/t_max).^3 + 30* (t/t_max).^2) ;
+% ads = (xf-x0)/t_max^2 * (120*(t/t_max).^3 -180* (t/t_max).^2 + 60* (t/t_max)) ;
 
-
-figure(4)
-yyaxis left
-plot(t,pos_vel(:,1),'r')
+figure(3)
+plot(t,xds(1,:),'r')
 hold on
-plot(t,pos_vel(:,2),'b')
+plot(t,vds(1,:),'k')
 hold on
-yyaxis right
-plot(t,pos_vel(:,3),'k')
-hold on
-plot(t,pos_vel(:,4),'g')
-hold on
-
-
-%% Tension info
-tension_info = []; % tension_info = [Tau_mg;Tau_ff;Tau_c]
-save('tension_info.mat','tension_info');
-if isfile('tension_info.mat')
-    delete('tension_info.mat');
-    save('tension_info.mat','tension_info');
-else
-     save('tension_info.mat','tension_info');
-end
 %% Solving Dynamical Equations
 odeopts = odeset('RelTol',1e-5,'AbsTol',1e-5);
 [t, x] = ode45(@odefun, [0 t_max], x_0, odeopts, data);
-yyaxis left
 plot(t,x(:,1))
 hold on
-plot(t,x(:,2))
-hold on
-yyaxis right
 plot(t,x(:,3))
 hold on  
-plot(t,x(:,4))
-hold on
-legend('x_d','y_d','v_{dx}','v_{dy}','x','y','v_x','v_y');title('Dynamic Control of three cables system');
-grid on ; xlabel('Time (s)');
-yyaxis left; ylabel('error of position (m)');
-yyaxis right; ylabel('error of velocity (m/s)');
 
-%% Plot the error
-figure(5) 
-res = mytraj(t,interval_2);
-plot(t,x(:,1:2) - res(:,1:2));
-hold on
-plot(t,x(:,3:4) - res(:,3:4));
-legend('e_x','e_y','e_{vx}','e_{vy}');title('Error of the model');
+legend('xd','vd','x','v');title('Dynamic Control of three cables system');
 grid on ; xlabel('Time (s)') ;
 
-%% Plot the tension with respect to time
-figure(6)
-load('tension_info.mat','tension_info')
-plot(tension_info(1,:),tension_info(2:4,:));
-legend('\tau_{mg}','\tau_{ff}','\tau_{c}');title('Tensions along three cable');
-grid on ; xlabel('Time (s)') ; ylabel('cable tension(N)');
+%% Plot the error
+figure(4) 
+[xds, vds, ads] = traj(t,data);
+plot(t,x(:,1:2) - xds');
+hold on
+plot(t,x(:,3:4) - vds');
+legend('e_x','e_y','e_{vx}','e_{vy}');title('Error of the model');
+grid on ; xlabel('Time (s)') ;
 
 %% 3D animation
 figure(8)
@@ -158,7 +130,7 @@ y_dynamic = x(:,2);
 
 
 %plot desired and actual static lines
-plot(generated_traj(:,1),generated_traj(:,2),'--k')
+plot(xds(1,:),xds(2,:),'--k')
 
 hold on
 plot(x(:,1),x(:,2),'b')
@@ -197,6 +169,7 @@ for idx_dynamic = 1:length(x_dynamic)
     pause(0.002)
      
 end
+
 %% odefun
 function dx = odefun(t,x,data)
 
@@ -210,12 +183,8 @@ function dx = odefun(t,x,data)
     m = data.m;
     kv = data.kv;
     kp = data.kp;
-    interval_2 = data.interval_2;
     %% tension distribution based on desired value Tau_ff
-    res = mytraj(t,interval_2);
-    xLd = res(:,1:2)';
-    vLd = res(:,3:4)';
-%     [xLd,vLd,aLd] = traj(t,data);
+    [xLd,vLd,aLd] = traj(t,data);
     Wd = normc(fixed_point - xLd*ones(1, max(size(fixed_point))));
     Nd = null(Wd);
     x0d = Wd\-G;
@@ -229,7 +198,7 @@ function dx = odefun(t,x,data)
     
     %% calculate the controller part Tau_c
     W = normc(fixed_point - xL*ones(1, max(size(fixed_point))));
-    Tau_c = W\(m* (kv* (vLd - vL) + kp* (xLd - xL))); 
+    Tau_c = W\(m* (aLd + kv* (vLd - vL) + kp* (xLd - xL))); 
     Tau_mg = Tau_ff+ Tau_c;
     
     % Saturation maintain the minimum tension along the cable
@@ -244,7 +213,6 @@ function dx = odefun(t,x,data)
         Tau_mg(3) = 1;
     end
     
-    % Control tension should be less than maximum tension
     if(Tau_mg(1)>30)
         Tau_mg(1) = 1;
     end
@@ -254,64 +222,24 @@ function dx = odefun(t,x,data)
     if(Tau_mg(3)>30)
         Tau_mg(3) = 1;
     end
-    %% Store tension infomation
-     load('tension_info.mat','tension_info');
-     tension_info = [tension_info,[t;Tau_mg;Tau_ff;Tau_c]]; 
-     save('tension_info.mat','tension_info');
+    Tau_mg;
+    
+    
     %% Dynamics 
     vL_dot = (W* Tau_mg + G)/m ;
     xL_dot = vL ;
     dx = [xL_dot; vL_dot] ;
 end
 
-%% define a minimum jerk trajectory consists three intervals:
-
-function pos_vel = mytraj(t,interval_2)
-
-    pos_vel=zeros(max(size(t)),4);   
-
-    for i=1:length(t)       
-        pos_vel(i,:)= calc_traj(t(i),interval_2)';  
-    end
-
-end
-
-function pos_vel = calc_traj(t,interval_2)
-    x0 = [0.2;0];
-    x01 = [0.2;0.2];
-    x02 = [0.8;0.2];
-    xf = [0.8;0];
-    t_max = 1;
-
-    %% five viapoints trajectory
-%     if(t>=0 && t< 1)       
-%         pos_vel = cal_jerk_traj(t,x0,x01,t_max) ;
-%     elseif(t>= 1 && t<2)
-%         pos_vel = [x01;0;0];
-%     elseif(t>=2 && t<8)
-%         pos_vel = interval_2(t-2)+ [0.2;0.2;0;0];
-%     elseif(t> 8 && t<9)
-%         pos_vel = [x02;0;0];
-%     else
-%         pos_vel = cal_jerk_traj(t-9,x02,xf,t_max) ;
-%     end
-    
-    %% only jerk viapoint curve
-        if(t >= 0 && t<2)
-            pos_vel = [x0;0;0];
-        elseif(t>= 2 && t<8)
-            pos_vel = interval_2(t-2)+ [0.2;0;0;0];
-        else
-            pos_vel = [xf;0;0];
-        end
-%     fprintf('simulating process: t = %f s \n',t)
-end
-
-
-function res = cal_jerk_traj(t,x0,xf,t_max) 
+%% define a minimum jerk trajectory from [0.2;0] to [0.8;0]
+function [xd, vd, ad] = traj(t,data) 
+    t_max = data.t_max;
+    x0 = data.x0';
+    xf = data.xf';
     xd = x0 + (6*(t/t_max).^5 -15* (t/t_max).^4 + 10* (t/t_max).^3)*(xf-x0);
+    xd = xd';
     vd = 1/t_max* (30*(t/t_max).^4 -60* (t/t_max).^3 + 30* (t/t_max).^2)*(xf-x0);
-    res = [xd; vd];
-    
+    vd = vd';
+    ad = 1/t_max^2 * (120*(t/t_max).^3 -180* (t/t_max).^2 + 60* (t/t_max))*(xf-x0);
+    ad = ad';
 end
-
