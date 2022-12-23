@@ -143,7 +143,7 @@ grid on ; xlabel('Time (s)') ;
 
 %% Plot the tension with respect to time
 
-% ATTENSION: the problem of this method to plot cable tension is the time
+% ATTENTION: the problem of this method to plot cable tension is the time
 % is not continous. For one given time, there could be more
 % corresponding cable tension. Simply because ode45 function will calculate
 % backforwardly the previous time period.
