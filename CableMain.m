@@ -49,7 +49,7 @@ t_max = 10;
 time_step_pos = 1/500;
 
 %% Controller Options
-kv  = [10, 0; 0, 10];
+kv  = [20, 0; 0, 20];
 kp  = [100, 0; 0, 100];
 
 %% Trajectory Generation
@@ -222,7 +222,7 @@ function dx = odefun(t,x,data)
     if(Tau_mg(3)>30)
         Tau_mg(3) = 1;
     end
-    Tau_mg
+    Tau_mg;
     
     
     %% Dynamics 
