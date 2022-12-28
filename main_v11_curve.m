@@ -115,7 +115,7 @@ else
      save('tension_info.mat','tension_info');
 end
 %% Solving Dynamical Equations
-odeopts = odeset('RelTol',1e-5,'AbsTol',1e-5);
+odeopts = odeset('RelTol',1e-6,'AbsTol',1e-6);
 [t, x] = ode45(@odefun, [0 t_max], x_0, odeopts, data);
 yyaxis left
 plot(t,x(:,1))
@@ -243,7 +243,7 @@ function dx = odefun(t,x,data)
     W = normc(fixed_point - xL*ones(1, max(size(fixed_point))));
     Tau_c = W\(m* (kv* (vLd - vL) + kp* (xLd - xL))); 
     Tau_mg = Tau_ff+ Tau_c;
-    
+%     Tau_mg = Tau_ff;
     % Saturation maintain the minimum tension along the cable
     
     if(Tau_mg(1)<1)
