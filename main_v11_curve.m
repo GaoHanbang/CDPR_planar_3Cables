@@ -3,7 +3,6 @@ clear
 close all
 fixed_point = [0,1; 0.5,1.5;1,1]';
 max(size(fixed_point));
-
 m = 1; %kg
 g = 9.81 ; % gravity 
 
@@ -115,7 +114,7 @@ else
      save('tension_info.mat','tension_info');
 end
 %% Solving Dynamical Equations
-odeopts = odeset('RelTol',1e-6,'AbsTol',1e-6);
+odeopts = odeset('RelTol',1e-5,'AbsTol',1e-5);
 [t, x] = ode45(@odefun, [0 t_max], x_0, odeopts, data);
 yyaxis left
 plot(t,x(:,1))
